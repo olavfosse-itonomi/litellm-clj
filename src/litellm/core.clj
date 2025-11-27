@@ -204,6 +204,57 @@
        (providers/transform-embedding-response provider-name response)))))
 
 ;; ============================================================================
+;; Core Rerank API
+;; ============================================================================
+
+(defn rerank
+  "Rerank documents based on relevance to a query.
+
+  **Parameters:**
+  - `provider` - Provider keyword (`:deepinfra`)
+  - `model` - Model name string (e.g., `\"Qwen/Qwen3-Reranker-0.6B\"`)
+  - `request-map` - Request with `:query` (string) and `:documents` (vector of strings)
+  - `config` - Optional config with `:api-key`, `:api-base`, `:timeout`
+
+  **Returns:**
+  - Response map with `:results` (vector of `{:index :relevance_score :document}`), `:meta`
+
+  **Examples:**
+
+  ```clojure
+  ;; Rerank documents by relevance
+  (rerank :deepinfra \"Qwen/Qwen3-Reranker-0.6B\"
+          {:query \"What is the capital of the United States?\"
+           :documents [\"Carson City is the capital of Nevada.\"
+                       \"Washington, D.C. is the capital of the United States.\"
+                       \"The capital of France is Paris.\"]}
+          {:api-key \"...\"})
+  ```"
+  ([provider-name model request-map]
+   (rerank provider-name model request-map {}))
+
+  ([provider-name model request-map config]
+   ;; Validate provider exists
+   (when-not (provider-available? provider-name)
+     (throw (errors/provider-not-found
+              (name provider-name)
+              :available-providers (list-providers))))
+
+   ;; Build full request with model
+   (let [request (assoc request-map :model model)]
+
+     ;; Validate rerank request
+     (providers/validate-rerank-request provider-name request)
+
+     ;; Merge API key and other request params into config
+     (let [merged-config (merge config (select-keys request [:api-key :api-base :timeout]))
+           transformed-request (providers/transform-rerank-request provider-name request merged-config)
+           response-future (providers/make-rerank-request provider-name transformed-request nil nil merged-config)
+           response @response-future]  ; Block and wait for response
+       ;; Transform response, passing original request for document mapping
+       (providers/transform-rerank-response provider-name response request)))))
+
+;; ============================================================================
 ;; Provider-Specific Convenience Functions
 ;; ============================================================================
 

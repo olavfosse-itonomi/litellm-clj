@@ -373,6 +373,48 @@
 (defmethod supports-embeddings? :deepinfra [provider-name]
   (deepinfra/supports-embeddings-impl provider-name))
 
+;; transform-rerank-request
+;; ----------------------------------------------------------------------------
+
+(defmulti transform-rerank-request
+  "Transform a standard rerank request to provider-specific format"
+  (fn [provider-name request config] provider-name))
+
+(defmethod transform-rerank-request :deepinfra [provider-name request config]
+  (deepinfra/transform-rerank-request-impl provider-name request config))
+
+;; make-rerank-request
+;; ----------------------------------------------------------------------------
+
+(defmulti make-rerank-request
+  "Make HTTP request to provider rerank API, returns a future"
+  (fn [provider-name transformed-request thread-pool telemetry config] provider-name))
+
+(defmethod make-rerank-request :deepinfra [provider-name transformed-request thread-pool telemetry config]
+  (deepinfra/make-rerank-request-impl provider-name transformed-request thread-pool telemetry config))
+
+;; transform-rerank-response
+;; ----------------------------------------------------------------------------
+
+(defmulti transform-rerank-response
+  "Transform provider rerank response to standard format"
+  (fn [provider-name response request] provider-name))
+
+(defmethod transform-rerank-response :deepinfra [provider-name response request]
+  (deepinfra/transform-rerank-response-impl provider-name response request))
+
+;; supports-rerank?
+;; ----------------------------------------------------------------------------
+
+(defmulti supports-rerank?
+  "Check if provider supports reranking"
+  identity)
+
+(defmethod supports-rerank? :default [_] false)
+
+(defmethod supports-rerank? :deepinfra [provider-name]
+  (deepinfra/supports-rerank-impl provider-name))
+
 ;; ============================================================================
 ;; Provider Validation
 ;; ============================================================================
@@ -413,6 +455,25 @@
              "Invalid embedding request format"
              :request request
              :errors (schemas/explain-embedding-request request)))))
+
+(defn validate-rerank-request
+  "Validate rerank request against provider capabilities"
+  [provider-name request]
+  (when-not (supports-rerank? provider-name)
+    (throw (errors/unsupported-feature
+             (name provider-name)
+             :rerank
+             :message "Provider doesn't support reranking")))
+
+  (when-not (:query request)
+    (throw (errors/invalid-request
+             "Rerank request requires :query"
+             :request request)))
+
+  (when-not (seq (:documents request))
+    (throw (errors/invalid-request
+             "Rerank request requires non-empty :documents"
+             :request request))))
 
 ;; ============================================================================
 ;; Model String Parsing

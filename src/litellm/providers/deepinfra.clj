@@ -354,6 +354,70 @@
   true)
 
 ;; ============================================================================
+;; Rerank Support
+;; ============================================================================
+
+(defn transform-rerank-request-impl
+  "DeepInfra-specific transform-rerank-request implementation.
+   DeepInfra uses a different format than Cohere - it expects 'queries' (array) and 'documents'."
+  [provider-name request config]
+  (let [model (:model request)
+        query (:query request)
+        documents (:documents request)]
+    {:model model
+     :queries [query]
+     :documents documents}))
+
+(defn make-rerank-request-impl
+  "DeepInfra-specific make-rerank-request implementation.
+   DeepInfra rerank uses /v1/inference/{model} endpoint."
+  [provider-name transformed-request thread-pool telemetry config]
+  (let [model (:model transformed-request)
+        url (str (:api-base config "https://api.deepinfra.com") "/v1/inference/" model)]
+    (errors/wrap-http-errors
+      "deepinfra"
+      #(let [start-time (System/currentTimeMillis)
+             ;; Remove model from body since it's in the URL
+             body (dissoc transformed-request :model)
+             response (http/post url
+                                 (conj {:headers {"Authorization" (str "Bearer " (:api-key config))
+                                                  "Content-Type" "application/json"
+                                                  "User-Agent" "litellm-clj/1.0.0"}
+                                        :body (json/encode body)
+                                        :timeout (:timeout config 30000)
+                                        :async? true
+                                        :as :json}
+                                       (when thread-pool
+                                         {:executor thread-pool})))
+             duration (- (System/currentTimeMillis) start-time)]
+
+         ;; Handle errors if response has error status
+         (when (>= (:status @response) 400)
+           (handle-error-response :deepinfra @response))
+
+         response))))
+
+(defn transform-rerank-response-impl
+  "DeepInfra-specific transform-rerank-response implementation.
+   Transforms DeepInfra's scores array into Cohere-compatible format."
+  [provider-name response request]
+  (let [body (:body response)
+        scores (:scores body)
+        documents (:documents request)]
+    {:results (map-indexed (fn [idx score]
+                             {:index idx
+                              :relevance_score score
+                              :document {:text (nth documents idx nil)}})
+                           scores)
+     :meta {:input-tokens (:input_tokens body)
+            :request-id (:request_id body)}}))
+
+(defn supports-rerank-impl
+  "DeepInfra-specific supports-rerank? implementation"
+  [provider-name]
+  true)
+
+;; ============================================================================
 ;; Utility Functions
 ;; ============================================================================
 
