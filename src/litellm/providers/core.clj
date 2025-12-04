@@ -10,7 +10,8 @@
             [litellm.providers.mistral :as mistral]
             [litellm.providers.ollama :as ollama]
             [litellm.providers.openrouter :as openrouter]
-            [litellm.providers.deepinfra :as deepinfra]))
+            [litellm.providers.deepinfra :as deepinfra]
+            [litellm.providers.azure-openai :as azure-openai]))
 
 ;; ============================================================================
 ;; Provider Multimethods and Implementations
@@ -44,6 +45,9 @@
 (defmethod transform-request :deepinfra [provider-name request config]
   (deepinfra/transform-request-impl provider-name request config))
 
+(defmethod transform-request :azure-openai [provider-name request config]
+  (azure-openai/transform-request-impl provider-name request config))
+
 ;; make-request
 ;; ----------------------------------------------------------------------------
 
@@ -72,6 +76,9 @@
 (defmethod make-request :deepinfra [provider-name transformed-request thread-pool telemetry config]
   (deepinfra/make-request-impl provider-name transformed-request thread-pool telemetry config))
 
+(defmethod make-request :azure-openai [provider-name transformed-request thread-pool telemetry config]
+  (azure-openai/make-request-impl provider-name transformed-request thread-pool telemetry config))
+
 ;; make-streaming-request
 ;; ----------------------------------------------------------------------------
 
@@ -93,6 +100,9 @@
 
 (defmethod make-streaming-request :deepinfra [provider-name transformed-request thread-pool config]
   (deepinfra/make-streaming-request-impl provider-name transformed-request thread-pool config))
+
+(defmethod make-streaming-request :azure-openai [provider-name transformed-request thread-pool config]
+  (azure-openai/make-streaming-request-impl provider-name transformed-request thread-pool config))
 
 ;; transform-response
 ;; ----------------------------------------------------------------------------
@@ -122,6 +132,9 @@
 (defmethod transform-response :deepinfra [provider-name response]
   (deepinfra/transform-response-impl provider-name response))
 
+(defmethod transform-response :azure-openai [provider-name response]
+  (azure-openai/transform-response-impl provider-name response))
+
 ;; transform-streaming-chunk
 ;; ----------------------------------------------------------------------------
 
@@ -143,6 +156,9 @@
 
 (defmethod transform-streaming-chunk :deepinfra [provider-name chunk]
   (deepinfra/transform-streaming-chunk-impl provider-name chunk))
+
+(defmethod transform-streaming-chunk :azure-openai [provider-name chunk]
+  (azure-openai/transform-streaming-chunk-impl provider-name chunk))
 
 ;; supports-streaming?
 ;; ----------------------------------------------------------------------------
@@ -174,6 +190,9 @@
 (defmethod supports-streaming? :deepinfra [provider-name]
   (deepinfra/supports-streaming-impl provider-name))
 
+(defmethod supports-streaming? :azure-openai [provider-name]
+  (azure-openai/supports-streaming-impl provider-name))
+
 ;; supports-function-calling?
 ;; ----------------------------------------------------------------------------
 
@@ -203,6 +222,9 @@
 
 (defmethod supports-function-calling? :deepinfra [provider-name]
   (deepinfra/supports-function-calling-impl provider-name))
+
+(defmethod supports-function-calling? :azure-openai [provider-name]
+  (azure-openai/supports-function-calling-impl provider-name))
 
 ;; get-rate-limits
 ;; ----------------------------------------------------------------------------
@@ -236,6 +258,9 @@
 (defmethod get-rate-limits :deepinfra [provider-name]
   (deepinfra/get-rate-limits-impl provider-name))
 
+(defmethod get-rate-limits :azure-openai [provider-name]
+  (azure-openai/get-rate-limits-impl provider-name))
+
 ;; health-check
 ;; ----------------------------------------------------------------------------
 
@@ -263,6 +288,9 @@
 
 (defmethod health-check :deepinfra [provider-name thread-pool config]
   (deepinfra/health-check-impl provider-name thread-pool config))
+
+(defmethod health-check :azure-openai [provider-name thread-pool config]
+  (azure-openai/health-check-impl provider-name thread-pool config))
 
 ;; get-cost-per-token
 ;; ----------------------------------------------------------------------------
@@ -295,6 +323,9 @@
 (defmethod get-cost-per-token :deepinfra [provider-name model]
   (deepinfra/get-cost-per-token-impl provider-name model))
 
+(defmethod get-cost-per-token :azure-openai [provider-name model]
+  (azure-openai/get-cost-per-token-impl provider-name model))
+
 ;; transform-embedding-request
 ;; ----------------------------------------------------------------------------
 
@@ -313,6 +344,9 @@
 
 (defmethod transform-embedding-request :deepinfra [provider-name request config]
   (deepinfra/transform-embedding-request-impl provider-name request config))
+
+(defmethod transform-embedding-request :azure-openai [provider-name request config]
+  (azure-openai/transform-embedding-request-impl provider-name request config))
 
 ;; make-embedding-request
 ;; ----------------------------------------------------------------------------
@@ -333,6 +367,9 @@
 (defmethod make-embedding-request :deepinfra [provider-name transformed-request thread-pool telemetry config]
   (deepinfra/make-embedding-request-impl provider-name transformed-request thread-pool telemetry config))
 
+(defmethod make-embedding-request :azure-openai [provider-name transformed-request thread-pool telemetry config]
+  (azure-openai/make-embedding-request-impl provider-name transformed-request thread-pool telemetry config))
+
 ;; transform-embedding-response
 ;; ----------------------------------------------------------------------------
 
@@ -351,6 +388,9 @@
 
 (defmethod transform-embedding-response :deepinfra [provider-name response]
   (deepinfra/transform-embedding-response-impl provider-name response))
+
+(defmethod transform-embedding-response :azure-openai [provider-name response]
+  (azure-openai/transform-embedding-response-impl provider-name response))
 
 ;; supports-embeddings?
 ;; ----------------------------------------------------------------------------
@@ -372,6 +412,9 @@
 
 (defmethod supports-embeddings? :deepinfra [provider-name]
   (deepinfra/supports-embeddings-impl provider-name))
+
+(defmethod supports-embeddings? :azure-openai [provider-name]
+  (azure-openai/supports-embeddings-impl provider-name))
 
 ;; transform-rerank-request
 ;; ----------------------------------------------------------------------------

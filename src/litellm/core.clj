@@ -3,12 +3,14 @@
   (:require [clojure.tools.logging :as log]
             [litellm.errors :as errors]
             [litellm.providers.core :as providers]
-            [litellm.providers.openai]    ; Load to register provider
-            [litellm.providers.anthropic] ; Load to register provider
-            [litellm.providers.gemini]    ; Load to register provider
-            [litellm.providers.mistral]   ; Load to register provider
-            [litellm.providers.ollama]    ; Load to register provider
-            [litellm.providers.openrouter] ; Load to register provider
+            [litellm.providers.openai]       ; Load to register provider
+            [litellm.providers.anthropic]    ; Load to register provider
+            [litellm.providers.gemini]       ; Load to register provider
+            [litellm.providers.mistral]      ; Load to register provider
+            [litellm.providers.ollama]       ; Load to register provider
+            [litellm.providers.openrouter]   ; Load to register provider
+            [litellm.providers.deepinfra]    ; Load to register provider
+            [litellm.providers.azure-openai] ; Load to register provider
             ))
 
 ;; ============================================================================
@@ -288,6 +290,22 @@
   [model request-map & {:as config}]
   (completion :openrouter model request-map config))
 
+(defn deepinfra-completion
+  "Direct DeepInfra completion"
+  [model request-map & {:as config}]
+  (completion :deepinfra model request-map config))
+
+(defn azure-openai-completion
+  "Direct Azure OpenAI completion.
+
+   Config requires:
+   - :api-key - Azure OpenAI API key
+   - :api-base - Azure resource endpoint (e.g., https://myresource.openai.azure.com)
+   - :api-version - API version (defaults to 2024-08-01-preview)
+   - :deployment - Deployment name (optional, defaults to model)"
+  [model request-map & {:as config}]
+  (completion :azure-openai model request-map config))
+
 (defn openai-embedding
   "Direct OpenAI embedding"
   [model request-map & {:as config}]
@@ -302,6 +320,16 @@
   "Direct Gemini embedding"
   [model request-map & {:as config}]
   (embedding :gemini model request-map config))
+
+(defn deepinfra-embedding
+  "Direct DeepInfra embedding"
+  [model request-map & {:as config}]
+  (embedding :deepinfra model request-map config))
+
+(defn azure-openai-embedding
+  "Direct Azure OpenAI embedding"
+  [model request-map & {:as config}]
+  (embedding :azure-openai model request-map config))
 
 ;; ============================================================================
 ;; Provider Validation

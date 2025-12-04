@@ -181,33 +181,84 @@
                 :model model
                 :config {:api-key key}})))
 
+(defn setup-deepinfra!
+  "Quick setup for DeepInfra with optional custom config name"
+  [& {:keys [config-name api-key model]
+      :or {config-name :deepinfra
+           model "meta-llama/Meta-Llama-3.1-8B-Instruct"}}]
+  (let [key (or api-key (System/getenv "DEEPINFRA_API_KEY"))]
+    (when-not key
+      (throw (ex-info "DeepInfra API key not provided and DEEPINFRA_API_KEY env var not set" {})))
+    (register! config-name
+               {:provider :deepinfra
+                :model model
+                :config {:api-key key}})))
+
+(defn setup-azure-openai!
+  "Quick setup for Azure OpenAI with optional custom config name.
+
+   Parameters:
+   - :config-name - Router config name (default :azure-openai)
+   - :api-key - Azure OpenAI API key (or AZURE_OPENAI_API_KEY env var)
+   - :api-base - Azure resource endpoint (or AZURE_OPENAI_API_BASE env var)
+   - :api-version - API version (default 2024-08-01-preview, or AZURE_OPENAI_API_VERSION env var)
+   - :deployment - Deployment name (or AZURE_OPENAI_DEPLOYMENT env var)"
+  [& {:keys [config-name api-key api-base api-version deployment]
+      :or {config-name :azure-openai
+           api-version "2024-08-01-preview"}}]
+  (let [key (or api-key (System/getenv "AZURE_OPENAI_API_KEY"))
+        base (or api-base (System/getenv "AZURE_OPENAI_API_BASE"))
+        version (or api-version (System/getenv "AZURE_OPENAI_API_VERSION") "2024-08-01-preview")
+        deploy (or deployment (System/getenv "AZURE_OPENAI_DEPLOYMENT"))]
+    (when-not key
+      (throw (ex-info "Azure OpenAI API key not provided and AZURE_OPENAI_API_KEY env var not set" {})))
+    (when-not base
+      (throw (ex-info "Azure OpenAI API base not provided and AZURE_OPENAI_API_BASE env var not set" {})))
+    (register! config-name
+               {:provider :azure-openai
+                :model (or deploy "gpt-4")
+                :config {:api-key key
+                         :api-base base
+                         :api-version version
+                         :deployment deploy}})))
+
 (defn quick-setup!
   "Quick setup for common providers using environment variables
-  
+
   Sets up:
   - :openai if OPENAI_API_KEY is set
   - :anthropic if ANTHROPIC_API_KEY is set
   - :gemini if GEMINI_API_KEY is set
   - :mistral if MISTRAL_API_KEY is set
+  - :openrouter if OPENROUTER_API_KEY is set
+  - :deepinfra if DEEPINFRA_API_KEY is set
+  - :azure-openai if AZURE_OPENAI_API_KEY and AZURE_OPENAI_API_BASE are set
   - :ollama (always, defaults to localhost)"
   []
   (when (System/getenv "OPENAI_API_KEY")
     (setup-openai!))
-  
+
   (when (System/getenv "ANTHROPIC_API_KEY")
     (setup-anthropic!))
-  
+
   (when (System/getenv "GEMINI_API_KEY")
     (setup-gemini!))
-  
+
   (when (System/getenv "MISTRAL_API_KEY")
     (setup-mistral!))
-  
+
   (when (System/getenv "OPENROUTER_API_KEY")
     (setup-openrouter!))
-  
+
+  (when (System/getenv "DEEPINFRA_API_KEY")
+    (setup-deepinfra!))
+
+  (when (and (System/getenv "AZURE_OPENAI_API_KEY")
+             (System/getenv "AZURE_OPENAI_API_BASE"))
+    (setup-azure-openai!))
+
   (setup-ollama!)
-  
+
   (log/info "Quick setup complete. Available configs:" (list-configs)))
 
 ;; ============================================================================
